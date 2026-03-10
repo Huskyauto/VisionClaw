@@ -1,227 +1,629 @@
-# VisionClaw 🦞+😎
+# VisionClaw
 
-![VisionClaw](assets/teaserimage.png)
+**A Self-Actualizing Personal AI Assistant Platform**
 
-A real-time AI assistant for Meta Ray-Ban smart glasses. See what you see, hear what you say, and take actions on your behalf -- all through voice.
+VisionClaw is a full-stack, multi-agent AI assistant platform built with React, TypeScript, Express, and PostgreSQL. It features streaming multi-model chat, a 12-persona agent team, autonomous background tasks, semantic memory, voice conversations, payment processing, and cloud backups — all in a single deployable application.
 
-![Cover](assets/cover.png)
+---
 
-Built on [Meta Wearables DAT SDK](https://github.com/facebook/meta-wearables-dat-ios) + [Gemini Live API](https://ai.google.dev/gemini-api/docs/live) + [OpenClaw](https://github.com/nichochar/openclaw) (optional).
+## Table of Contents
 
-## What It Does
+- [Architecture Overview](#architecture-overview)
+- [Feature List](#feature-list)
+  - [Multi-Conversation Streaming Chat](#multi-conversation-streaming-chat)
+  - [Multi-Provider AI Routing](#multi-provider-ai-routing)
+  - [12-Persona Agent System](#12-persona-agent-system)
+  - [Agentic Tool Calling](#agentic-tool-calling)
+  - [Semantic Three-Tier Memory](#semantic-three-tier-memory)
+  - [Knowledge Base](#knowledge-base)
+  - [Autonomous Heartbeat Engine](#autonomous-heartbeat-engine)
+  - [Voice Conversations](#voice-conversations)
+  - [File and Image Upload](#file-and-image-upload)
+  - [Analytics Dashboard](#analytics-dashboard)
+  - [Conversation Templates](#conversation-templates)
+  - [Skills System](#skills-system)
+  - [Inline Chart Generation](#inline-chart-generation)
+  - [Smart Context Injection](#smart-context-injection)
+  - [Stripe Payments](#stripe-payments)
+  - [Google Drive Cloud Backup](#google-drive-cloud-backup)
+  - [PIN-Based Authentication](#pin-based-authentication)
+  - [Export and Import](#export-and-import)
+  - [Mobile PWA Support](#mobile-pwa-support)
+  - [Dark and Light Mode](#dark-and-light-mode)
+  - [Discord Bot Integration](#discord-bot-integration)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [API Reference](#api-reference)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
 
-Put on your glasses, tap the AI button, and talk:
+---
 
-- **"What am I looking at?"** -- Gemini sees through your glasses camera and describes the scene
-- **"Add milk to my shopping list"** -- delegates to OpenClaw, which adds it via your connected apps
-- **"Send a message to John saying I'll be late"** -- routes through OpenClaw to WhatsApp/Telegram/iMessage
-- **"Search for the best coffee shops nearby"** -- web search via OpenClaw, results spoken back
+## Architecture Overview
 
-The glasses camera streams at ~1fps to Gemini for visual context, while audio flows bidirectionally in real-time.
+VisionClaw is a modular monolith — frontend and backend live in one repository, deployed as a single service.
 
-## How It Works
+- **Frontend**: React 18 + TypeScript, styled with TailwindCSS and shadcn/ui, routed with Wouter, state-managed with TanStack Query v5.
+- **Backend**: Express.js + TypeScript, using Drizzle ORM over PostgreSQL, with SSE (Server-Sent Events) for real-time streaming.
+- **Shared**: A common `shared/schema.ts` defines all database tables, Zod validation schemas, and TypeScript types used by both frontend and backend.
 
-![How It Works](assets/how.png)
+The application serves both the Vite-built frontend and the Express API on a single port (5000). AI responses stream in real-time via SSE, tool calls execute server-side with multi-round loops, and the heartbeat engine runs autonomous background tasks on configurable cron schedules.
+
+**Total codebase**: ~17,700 lines of TypeScript across 50+ files.
+
+---
+
+## Feature List
+
+### Multi-Conversation Streaming Chat
+
+The core chat interface supports unlimited concurrent conversations, each with its own model selection, persona assignment, and full message history.
+
+- **Real-time streaming** via Server-Sent Events (SSE) — tokens appear as they're generated
+- **Markdown rendering** with syntax highlighting, LaTeX math, and code blocks
+- **Thinking mode** — "Think then Act" reasoning displays step-by-step thoughts in a collapsible block before the final answer
+- **Conversation management** — create, rename, delete, and search conversations
+- **Message actions** — copy to clipboard, view raw content
+- **Auto-titling** — conversations are automatically named based on the first message
+- **Abort generation** — stop a response mid-stream with a cancel button
+
+### Multi-Provider AI Routing
+
+VisionClaw routes requests across 6+ AI providers with dynamic model discovery and cost tier indicators.
+
+| Provider | Models | Connection |
+|----------|--------|------------|
+| **OpenAI** | GPT-4o, GPT-4.1, o3-mini, GPT-5.1 | Replit AI Integrations |
+| **Anthropic** | Claude 3.5 Sonnet, Claude 4 Opus | Replit AI Integrations |
+| **Google** | Gemini 2.0, Gemini 2.5 Pro | Replit AI Integrations |
+| **xAI** | Grok-3, Grok-3-mini | Direct API key |
+| **Perplexity** | Sonar, Sonar Pro | Direct API key |
+| **OpenRouter** | Any model on OpenRouter | Direct API key |
+
+- Dynamic model list fetched from each provider's API
+- Cost tier badges (Free, Low, Medium, High, Premium) displayed per model
+- Per-conversation model selection — switch models mid-conversation
+- Provider API key management UI in Settings with connection testing
+- Automatic fallback if a provider is unavailable
+
+### 12-Persona Agent System
+
+Every AI interaction is shaped by a **persona** — a structured identity configuration with 8 document fields that compose the system prompt.
+
+#### Persona Document Fields
+
+| Field | Purpose |
+|-------|---------|
+| **Soul** | Voice, tone, personality, and core values |
+| **Identity** | Mission statement, scoreboard (success metrics), archetype |
+| **Memory Doc** | Persona-specific preferences, guardrails, and rules |
+| **Operating Loop** | Step-by-step execution protocol (e.g., Clarify, Plan, Execute, Verify) |
+| **Heartbeat Doc** | Scheduled task instructions and daily routines |
+| **Tools Doc** | Rules and preferences for tool usage |
+| **Agents Doc** | Chain of command and cross-agent communication rules |
+| **Brand Voice Doc** | Writing style, vocabulary, and brand consistency guidelines |
+
+#### Default Persona Roster
+
+| Persona | Role | Specialty |
+|---------|------|-----------|
+| **VisionClaw** | Personal Assistant | Default conversational agent |
+| **Felix** | CEO | Revenue growth, high-leverage execution |
+| **Forge** | Staff Engineer | Code quality, reliability, engineering standards |
+| **Teagan** | Content Marketing | Content strategy and sharp copy |
+| **Chief of Staff** | Operations Director | Task routing, chain of command hub |
+| **Scribe** | Content Creator | Blog posts, social media, email drafts |
+| **Proof** | Content Reviewer | Quality gate — approves/revises Scribe's output |
+| **Radar** | Intelligence Analyst | Daily surface scans, trend detection |
+| **Neptune** | Deep Research | Activated on Radar escalation for deep analysis |
+| **Apollo** | Revenue & Pipeline | Sales tracking, deal progression |
+| **Atlas** | Metrics & Reporting | ROI tracking, cost analysis, dashboards |
+
+- **Quick-switch dropdown** in chat header to change persona without leaving the conversation
+- **Chain of command enforcement** — Neptune only activates via Radar; no direct CEO access
+- **Content two-gate rule** — Scribe drafts content, Proof must review before shipping
+- Full CRUD for creating custom personas with all 8 document fields
+
+### Agentic Tool Calling
+
+The AI can invoke 15 server-side tools with multi-round execution loops. Tool calls stream as real-time SSE events showing the tool name, arguments, and results inline in the chat.
+
+| Tool | Description |
+|------|-------------|
+| `test_api_keys` | Tests all configured provider API keys for connectivity and latency |
+| `check_system_status` | Returns system health: uptime, counts, memory stats, heartbeat status |
+| `list_models` | Lists all available models across all configured providers |
+| `search_memory` | Searches long-term memory for stored facts about the user |
+| `create_memory` | Stores a new fact in long-term memory |
+| `update_memory` | Updates or archives an existing memory entry |
+| `search_knowledge` | Searches the permanent knowledge base |
+| `create_knowledge` | Adds a new entry to the knowledge base |
+| `get_daily_notes` | Retrieves activity logs for a specific date or the last 7 days |
+| `write_daily_note` | Logs events, decisions, or lessons to today's daily notes |
+| `list_conversations` | Lists recent conversations with titles and metadata |
+| `web_fetch` | Fetches clean text content from a URL (via Jina AI reader) |
+| `web_search` | Searches the web via Wikipedia and Jina AI |
+| `generate_chart` | Creates inline interactive charts (bar, line, pie, area) in chat |
+| `delegate_task` | Delegates a task to another persona via the heartbeat system |
+
+- Multi-round tool loops — the AI can chain multiple tool calls in sequence
+- SSRF protection on web_fetch and web_search
+- Tool results rendered inline with collapsible detail sections
+
+### Semantic Three-Tier Memory
+
+VisionClaw maintains persistent memory about the user across all conversations using a hybrid retrieval system.
+
+- **Durable Facts** — long-term memories categorized as preferences, relationships, milestones, or status updates
+- **Daily Notes** — date-scoped activity logs with sections for events, decisions, lessons, and tomorrow's plan
+- **Auto-extraction** — the system automatically extracts memorable facts from conversations
+- **Semantic search** — vector embeddings via OpenAI `text-embedding-3-small` with keyword fallback
+- **Recency tiers** — memories are ranked as Hot (< 7 days), Warm (7-30 days), or Cold (> 30 days)
+- **Memory lifecycle** — automatic archival of expired/stale entries during maintenance cycles
+- **Token budget controls** — memory injection into system prompts respects configurable token limits
+- **Persona scoping** — memories can be scoped to specific personas
+- **Manual management** — add, edit, search, and delete memories through the Memory page
+
+### Knowledge Base
+
+A permanent, structured reference library distinct from the fluid memory system.
+
+- Entries have title, content, category (insight, decision, plan, reference), and priority (1-5)
+- Hybrid ranking combines semantic similarity with priority weighting
+- Persona-scoped — knowledge can be assigned to specific agents
+- Full CRUD with category and persona filtering
+- Injected into system prompts during chat for contextual grounding
+
+### Autonomous Heartbeat Engine
+
+A background task engine that enables personas to work independently on schedules, delegate to each other, and maintain their own state.
+
+- **Cron-based scheduling** — tasks run on configurable cron expressions (e.g., every 30 minutes, daily at 9 AM)
+- **60-second tick loop** — checks for due tasks every minute
+- **Maintenance cycles** — every 10 ticks, archives expired memories and prunes old logs
+- **Multi-round execution** — tasks build full context (memory, notes, knowledge, other agent status) before executing
+
+#### Supported Task Types
+
+| Type | Behavior |
+|------|----------|
+| `routine` | General-purpose scheduled tasks |
+| `daily_planning` | Generates daily notes based on previous activity |
+| `reflection` | Analyzes recent activity to update internal state |
+| `memory_consolidation` | Reviews and archives stale memories, creates new facts |
+| `knowledge` | Extracts structured insights and saves to knowledge base |
+| `model_scout` | Analyzes available AI models and recommends configurations |
+| `delegation` | Tasks created by one agent for another |
+| `content` | Content creation (triggers Scribe-to-Proof review workflow) |
+| `content_review` | Quality review of content before shipping |
+| `cloud_backup` | Automated Google Drive backup |
+
+- **One-click task templates** — pre-built configurations for 6 agents (Radar, Chief of Staff, Apollo, Forge, Atlas, Scribe)
+- **Self-task creation** — agents can schedule follow-up tasks for themselves
+- **Cross-agent delegation** — agents delegate work via structured JSON blocks
+- **Chain of command** — hierarchical routing enforced (e.g., Neptune activates only via Radar)
+- **Activity feed** — last 10 execution logs shown on the home dashboard
+
+### Voice Conversations
+
+Full voice input and output powered by ElevenLabs via Replit Connectors.
+
+- **Speech-to-text** — mic button records audio, transcribed via ElevenLabs Scribe
+- **Text-to-speech** — AI responses played back using ElevenLabs Flash v2.5
+- **Audio streaming** — PCM16 audio streamed via SSE with AudioWorklet playback
+- **TTS toggle** — persisted in localStorage, enable/disable per session
+- **Multiple voices** — voice selection from available ElevenLabs voices
+
+### File and Image Upload
+
+Chat supports file and image attachments with multimodal AI processing.
+
+- **Supported image formats**: PNG, JPG, GIF, WebP
+- **Supported file formats**: TXT, MD, CSV, JSON, PDF
+- **Max file size**: 10MB per file
+- **Image handling**: Sent to vision-capable models as base64 multimodal content
+- **Secure storage**: Files stored in `uploads/` with cryptographic filenames
+- **Attachment preview**: Thumbnails shown in chat before sending
+- **Auth-aware serving**: Upload URLs include auth tokens for PIN-protected instances
+
+### Analytics Dashboard
+
+A dedicated `/analytics` page with Recharts-powered visualizations of AI usage patterns.
+
+- **Messages per day** — area chart showing daily message volume
+- **Model usage** — pie chart breaking down which models are used most
+- **Hourly activity** — bar chart showing peak usage hours
+- **Tool usage** — ranked bar chart of most-used agentic tools
+- **KPI cards** — total conversations, total messages, and period summaries
+- All data computed via SQL `GROUP BY` queries for performance
+
+### Conversation Templates
+
+10 pre-built templates for common workflows, shown as a card grid on the home dashboard.
+
+- Weekly Business Review, Code Review, Email Drafting, Brainstorming, Content Strategy, and more
+- One-click start — creates a new conversation with pre-configured model, persona, and starter messages
+- System prompt prefix injection for specialized behavior
+- Full CRUD — create, edit, and delete custom templates
+
+### Skills System
+
+Over 50 toggleable agent capabilities that inject specialized prompt content into the system prompt.
+
+- Organized by category: Reasoning, Writing, Coding, Research, Marketing, Operations
+- Toggle switches to enable/disable individual skills
+- 34+ enhanced skills with dedicated prompt content (e.g., Vibe Marketing, Browser Automation, Caption Generation, Coding Agent Loops)
+- Skills are injected into the system prompt at chat time when enabled
+
+### Inline Chart Generation
+
+The AI can generate interactive charts directly in chat messages using the `generate_chart` tool.
+
+- **Chart types**: Bar, Line, Pie, Area
+- **Rendered inline** using Recharts with responsive containers
+- **Supports both** tool-call output and ` ```chart ``` ` code blocks in message text
+- **Customizable** colors, axis keys, and titles
+
+### Smart Context Injection
+
+New chat screens display a contextual greeting card with relevant information.
+
+- Time-of-day greeting with active persona info
+- Recent conversations for quick context
+- Remembered facts about the user
+- Dismissible card that hides once you start chatting
+- Backend injects temporal context (day, time, season) into system prompts
+
+### Stripe Payments
+
+Full payment processing integrated via Stripe and Replit Connectors.
+
+- **Product catalog** — create products with one-time or subscription pricing
+- **Stripe Checkout** — generates checkout sessions for seamless payment
+- **Transaction history** — view recent payment intents and their status
+- **Webhook-driven sync** — automatic data synchronization via Stripe webhooks
+- **Payments page** at `/payments` with product cards and transaction table
+
+### Google Drive Cloud Backup
+
+Automated full-system backup to Google Drive.
+
+- **Daily automated backups** at 3 AM UTC via heartbeat task
+- **Complete data export** — conversations, messages, memories, knowledge, personas, settings, skills, heartbeat data
+- **Stored as JSON** in a `VisionClaw Backups` folder on Google Drive
+- **30-backup retention** with automatic cleanup of older files
+- **Manual backup** via "Backup to Google Drive" button in Settings
+
+### PIN-Based Authentication
+
+Optional security layer for protecting the entire application.
+
+- HMAC-SHA256 hashed PIN with salt
+- 7-day session tokens stored in localStorage
+- All API routes protected when PIN is configured
+- Centralized `authFetch` helper ensures every client-side request includes auth headers
+- Auth-aware file serving with query parameter token support for images
+
+### Export and Import
+
+Full data portability for backup and migration.
+
+- **Export** (`GET /api/export`) — downloads all data as a JSON file with API keys redacted
+- **Import** (`POST /api/import`) — restores data from an export file
+- Available in the Settings page with one-click buttons
+
+### Mobile PWA Support
+
+VisionClaw is installable as a Progressive Web App on mobile devices.
+
+- `manifest.json` with app name, icons (192px and 512px), and theme colors
+- Service worker (`sw.js`) with network-first caching strategy
+- Apple-specific meta tags for iOS home screen support
+- Viewport optimization for mobile screens
+- "Install App" button in sidebar (appears when browser supports installation)
+
+### Dark and Light Mode
+
+Full theme support with system-aware defaults.
+
+- Toggle switch in the sidebar
+- CSS custom properties for all color tokens
+- Dark class applied to `<html>` element
+- Persisted in localStorage across sessions
+
+### Discord Bot Integration
+
+Optional Discord bot that mirrors the AI chat experience to Discord channels.
+
+- Bot token configured in Settings
+- Status endpoint at `GET /api/discord/status`
+- Responds to Discord messages using the active persona and model configuration
+
+---
+
+## Tech Stack
+
+### Frontend
+| Technology | Purpose |
+|-----------|---------|
+| React 18 | UI framework |
+| TypeScript | Type safety |
+| TailwindCSS | Utility-first styling |
+| shadcn/ui | Component library |
+| Wouter | Client-side routing |
+| TanStack Query v5 | Server state management |
+| Recharts | Data visualization |
+| ReactMarkdown | Markdown rendering |
+| Lucide React | Icon library |
+
+### Backend
+| Technology | Purpose |
+|-----------|---------|
+| Express.js | HTTP server |
+| TypeScript | Type safety |
+| Drizzle ORM | Database queries and schema |
+| Zod | Request validation |
+| SSE | Real-time streaming |
+| cron-parser v5 | Heartbeat scheduling |
+
+### Infrastructure
+| Technology | Purpose |
+|-----------|---------|
+| PostgreSQL | Primary database |
+| Replit AI Integrations | OpenAI, Anthropic, Google model access |
+| Replit Connectors | ElevenLabs, Stripe, Google Drive |
+| Vite | Frontend build tool |
+
+---
+
+## Project Structure
 
 ```
-Meta Ray-Ban Glasses (or iPhone camera)
-       |
-       | video frames + mic audio
-       v
-iOS App (this project)
-       |
-       | JPEG frames (~1fps) + PCM audio (16kHz)
-       v
-Gemini Live API (WebSocket)
-       |
-       |-- Audio response (PCM 24kHz) --> iOS App --> Speaker
-       |-- Tool calls (execute) -------> iOS App --> OpenClaw Gateway
-       |                                                  |
-       |                                                  v
-       |                                          56+ skills: web search,
-       |                                          messaging, smart home,
-       |                                          notes, reminders, etc.
-       |                                                  |
-       |<---- Tool response (text) <----- iOS App <-------+
-       |
-       v
-  Gemini speaks the result
+VisionClaw/
+├── client/
+│   ├── src/
+│   │   ├── pages/              # 12 page components
+│   │   │   ├── home.tsx        # Dashboard
+│   │   │   ├── chat.tsx        # Chat interface
+│   │   │   ├── analytics.tsx   # Usage analytics
+│   │   │   ├── personas.tsx    # Persona management
+│   │   │   ├── memory.tsx      # Memory system
+│   │   │   ├── knowledge.tsx   # Knowledge base
+│   │   │   ├── skills.tsx      # Skills toggle panel
+│   │   │   ├── heartbeat.tsx   # Autonomous tasks
+│   │   │   ├── payments.tsx    # Stripe payments
+│   │   │   ├── settings.tsx    # Global settings
+│   │   │   ├── login.tsx       # PIN authentication
+│   │   │   └── not-found.tsx   # 404 page
+│   │   ├── components/
+│   │   │   ├── app-sidebar.tsx # Main navigation sidebar
+│   │   │   ├── error-state.tsx # Reusable error component
+│   │   │   └── ui/            # shadcn/ui components
+│   │   ├── lib/
+│   │   │   ├── queryClient.ts  # TanStack Query + authFetch
+│   │   │   ├── auth.tsx        # Auth context provider
+│   │   │   └── utils.ts        # Utility functions
+│   │   ├── hooks/
+│   │   │   └── use-toast.ts    # Toast notifications
+│   │   ├── App.tsx             # Router and layout
+│   │   └── main.tsx            # Entry point
+│   └── public/
+│       ├── sw.js               # Service worker
+│       ├── manifest.json       # PWA manifest
+│       └── icons/              # App icons
+├── server/
+│   ├── index.ts                # Express server entry
+│   ├── routes.ts               # All API route definitions
+│   ├── storage.ts              # Database access layer (IStorage)
+│   ├── chat-engine.ts          # AI chat logic + streaming
+│   ├── tools.ts                # 15 agentic tool definitions
+│   ├── heartbeat.ts            # Autonomous task engine
+│   ├── embeddings.ts           # Vector embedding generation
+│   ├── auth.ts                 # PIN authentication
+│   ├── voice.ts                # ElevenLabs voice integration
+│   ├── seed.ts                 # Database seeding (personas, skills, templates)
+│   ├── db.ts                   # Database connection
+│   ├── cron-utils.ts           # Cron expression utilities
+│   └── vite.ts                 # Vite dev server integration
+├── shared/
+│   └── schema.ts               # Database schema + Zod types
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── tailwind.config.ts
+└── drizzle.config.ts
 ```
 
-**Key pieces:**
-- **Gemini Live** -- real-time voice + vision AI over WebSocket (native audio, not STT-first)
-- **OpenClaw** (optional) -- local gateway that gives Gemini access to 56+ tools and all your connected apps
-- **iPhone mode** -- test the full pipeline using your iPhone camera instead of glasses
+---
 
-## Quick Start
+## Database Schema
 
-### 1. Clone and open
+VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 
-```bash
-git clone https://github.com/sseanliu/VisionClaw.git
-cd VisionClaw/samples/CameraAccess
-open CameraAccess.xcodeproj
-```
+| Table | Purpose | Key Fields |
+|-------|---------|------------|
+| `personas` | Agent identity configurations | name, role, soul, identity, operatingLoop, + 5 more doc fields |
+| `conversations` | Chat sessions | title, model, thinking, personaId |
+| `messages` | Chat messages | conversationId, role, content |
+| `memory_entries` | Long-term durable facts | fact, category, status, embedding, accessCount, expiresAt |
+| `daily_notes` | Date-scoped activity logs | date, content, personaId |
+| `agent_knowledge` | Permanent knowledge base | title, content, category, priority, embedding |
+| `agent_settings` | Global configuration | agentName, personality, defaultModel, accessPin |
+| `skills` | Toggleable capabilities | name, description, enabled, promptContent |
+| `provider_keys` | AI provider API keys | provider, apiKey, baseUrl, enabled |
+| `heartbeat_tasks` | Scheduled background tasks | name, cronExpression, promptContent, model, personaId |
+| `heartbeat_logs` | Task execution history | taskName, status, output, durationMs |
+| `conversation_templates` | Pre-built chat templates | name, systemPromptPrefix, starterMessages |
+| `users` | Authentication accounts | username, password |
 
-### 2. Add your Gemini API key
+---
 
-Get a free API key at [Google AI Studio](https://aistudio.google.com/apikey).
+## API Reference
 
-Open `samples/CameraAccess/CameraAccess/Gemini/GeminiConfig.swift` and replace the placeholder:
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Authenticate with PIN |
+| GET | `/api/auth/status` | Check session status |
 
-```swift
-static let apiKey = "YOUR_GEMINI_API_KEY"  // <-- paste your key here
-```
+### Conversations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/conversations` | List conversations (paginated) |
+| POST | `/api/conversations` | Create new conversation |
+| GET | `/api/conversations/:id` | Get conversation with messages |
+| PATCH | `/api/conversations/:id` | Update conversation |
+| DELETE | `/api/conversations/:id` | Delete conversation |
+| POST | `/api/conversations/:id/messages` | Send message (SSE stream response) |
+| GET | `/api/search` | Search conversations and messages |
 
-### 3. Build and run
+### Personas
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/personas` | List all personas |
+| GET | `/api/personas/active` | Get active persona |
+| POST | `/api/personas` | Create persona |
+| GET | `/api/personas/:id` | Get persona details |
+| PATCH | `/api/personas/:id` | Update persona |
+| DELETE | `/api/personas/:id` | Delete persona |
+| POST | `/api/personas/:id/activate` | Set active persona |
 
-Select your iPhone as the target device and hit Run (Cmd+R).
+### Memory
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/memory` | List memory entries (paginated) |
+| POST | `/api/memory` | Create memory entry |
+| PATCH | `/api/memory/:id` | Update memory entry |
+| DELETE | `/api/memory/:id` | Delete memory entry |
+| GET | `/api/memory/stats` | Memory statistics |
+| POST | `/api/memory/backfill-embeddings` | Generate missing embeddings |
 
-### 4. Try it out
+### Knowledge
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/knowledge` | List knowledge entries (paginated) |
+| POST | `/api/knowledge` | Create knowledge entry |
+| PATCH | `/api/knowledge/:id` | Update knowledge entry |
+| DELETE | `/api/knowledge/:id` | Delete knowledge entry |
 
-**Without glasses (iPhone mode):**
-1. Tap **"Start on iPhone"** -- uses your iPhone's back camera
-2. Tap the **AI button** to start a Gemini Live session
-3. Talk to the AI -- it can see through your iPhone camera
+### Daily Notes
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/daily-notes` | List all daily notes |
+| GET | `/api/daily-notes/:date` | Get note by date |
+| PUT | `/api/daily-notes/:date` | Create or update note |
 
-**With Meta Ray-Ban glasses:**
+### Heartbeat
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/heartbeat/tasks` | List scheduled tasks |
+| POST | `/api/heartbeat/tasks` | Create task |
+| PATCH | `/api/heartbeat/tasks/:id` | Update task |
+| DELETE | `/api/heartbeat/tasks/:id` | Delete task |
+| GET | `/api/heartbeat/logs` | Task execution logs |
+| GET | `/api/heartbeat/status` | Engine status |
+| POST | `/api/heartbeat/start` | Start engine |
+| POST | `/api/heartbeat/stop` | Stop engine |
+| POST | `/api/heartbeat/delegate` | Delegate task from chat |
 
-First, enable Developer Mode in the Meta AI app:
+### Settings and Providers
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/settings` | Get global settings |
+| PUT | `/api/settings` | Update settings |
+| GET | `/api/models` | List available AI models |
+| GET | `/api/provider-keys` | List provider keys (masked) |
+| PUT | `/api/provider-keys/:provider` | Set provider API key |
+| DELETE | `/api/provider-keys/:provider` | Remove provider key |
+| POST | `/api/provider-keys/test` | Test provider connectivity |
 
-1. Open the **Meta AI** app on your iPhone
-2. Go to **Settings** (gear icon, bottom left)
-3. Tap **App Info**
-4. Tap the **App version** number **5 times** -- this unlocks Developer Mode
-5. Go back to Settings -- you'll now see a **Developer Mode** toggle. Turn it on.
+### Files and Voice
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/upload` | Upload file |
+| GET | `/uploads/:filename` | Serve uploaded file |
+| POST | `/api/voice/conversations/:id/messages` | Voice message (STT + AI + TTS) |
+| GET | `/api/voice/voices` | List available voices |
 
-![How to enable Developer Mode](assets/dev_mode.png)
+### Stripe Payments
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/stripe/publishable-key` | Get Stripe public key |
+| GET | `/api/stripe/products` | List products and prices |
+| POST | `/api/stripe/checkout` | Create checkout session |
+| POST | `/api/stripe/create-product` | Create product |
+| GET | `/api/stripe/payments` | Transaction history |
 
-Then in VisionClaw:
-1. Tap **"Start Streaming"** in the app
-2. Tap the **AI button** for voice + vision conversation
+### Templates and Skills
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/templates` | List templates |
+| POST | `/api/templates` | Create template |
+| PATCH | `/api/templates/:id` | Update template |
+| DELETE | `/api/templates/:id` | Delete template |
+| POST | `/api/templates/:id/start` | Start conversation from template |
+| GET | `/api/skills` | List skills |
+| PATCH | `/api/skills/:id` | Toggle skill |
 
-## Setup: OpenClaw (Optional)
+### System
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/stats` | System statistics |
+| GET | `/api/analytics` | Usage analytics data |
+| GET | `/api/context/summary` | Context summary for new chats |
+| GET | `/api/discord/status` | Discord bot status |
+| POST | `/api/backup/cloud` | Trigger Google Drive backup |
+| GET | `/api/export` | Export all data as JSON |
+| POST | `/api/import` | Import data from JSON |
 
-OpenClaw gives Gemini the ability to take real-world actions: send messages, search the web, manage lists, control smart home devices, and more. Without it, Gemini is voice + vision only.
+---
 
-### 1. Install and configure OpenClaw
+## Getting Started
 
-Follow the [OpenClaw setup guide](https://github.com/nichochar/openclaw). Make sure the gateway is enabled:
+### Prerequisites
 
-In `~/.openclaw/openclaw.json`:
+- Node.js 20+
+- PostgreSQL database
+- At least one AI provider API key (OpenAI, Anthropic, Google, xAI, Perplexity, or OpenRouter)
 
-```json
-{
-  "gateway": {
-    "port": 18789,
-    "bind": "lan",
-    "auth": {
-      "mode": "token",
-      "token": "your-gateway-token-here"
-    },
-    "http": {
-      "endpoints": {
-        "chatCompletions": { "enabled": true }
-      }
-    }
-  }
-}
-```
+### Installation
 
-Key settings:
-- `bind: "lan"` -- exposes the gateway on your local network so your iPhone can reach it
-- `chatCompletions.enabled: true` -- enables the `/v1/chat/completions` endpoint (off by default)
-- `auth.token` -- the token your iOS app will use to authenticate
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up the database:
+   ```bash
+   npm run db:push
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open `http://localhost:5000` in your browser
 
-### 2. Configure the iOS app
+### First-Time Setup
 
-In `GeminiConfig.swift`, update the OpenClaw settings:
+1. Navigate to **Settings** and configure your AI provider API keys
+2. (Optional) Set a PIN for authentication
+3. (Optional) Configure ElevenLabs for voice, Stripe for payments, or Google Drive for backups
+4. Start chatting — the default VisionClaw persona is ready to go
 
-```swift
-static let openClawHost = "http://Your-Mac.local"           // your Mac's Bonjour hostname
-static let openClawPort = 18789
-static let openClawGatewayToken = "your-gateway-token-here"  // must match gateway.auth.token
-```
+---
 
-To find your Mac's Bonjour hostname: **System Settings > General > Sharing** -- it's shown at the top (e.g., `Johns-MacBook-Pro.local`).
+## Environment Variables
 
-### 3. Start the gateway
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `SESSION_SECRET` | Yes | Session signing secret |
+| `REPLIT_CONNECTORS_HOSTNAME` | Auto | Replit Connectors host (auto-injected) |
+| `REPL_IDENTITY` | Auto | Replit identity token (auto-injected) |
 
-```bash
-openclaw gateway restart
-```
+AI provider keys are stored in the database via the Settings page — not as environment variables. This allows runtime configuration without redeployment.
 
-Verify it's running:
+---
 
-```bash
-curl http://localhost:18789/health
-```
-
-Now when you talk to the AI, it can execute tasks through OpenClaw.
-
-## Architecture
-
-### Key Files
-
-All source code is in `samples/CameraAccess/CameraAccess/`:
-
-| File | Purpose |
-|------|---------|
-| `Gemini/GeminiConfig.swift` | API keys, model config, system prompt |
-| `Gemini/GeminiLiveService.swift` | WebSocket client for Gemini Live API |
-| `Gemini/AudioManager.swift` | Mic capture (PCM 16kHz) + audio playback (PCM 24kHz) |
-| `Gemini/GeminiSessionViewModel.swift` | Session lifecycle, tool call wiring, transcript state |
-| `OpenClaw/ToolCallModels.swift` | Tool declarations, data types |
-| `OpenClaw/OpenClawBridge.swift` | HTTP client for OpenClaw gateway |
-| `OpenClaw/ToolCallRouter.swift` | Routes Gemini tool calls to OpenClaw |
-| `iPhone/IPhoneCameraManager.swift` | AVCaptureSession wrapper for iPhone camera mode |
-
-### Audio Pipeline
-
-- **Input**: iPhone mic -> AudioManager (PCM Int16, 16kHz mono, 100ms chunks) -> Gemini WebSocket
-- **Output**: Gemini WebSocket -> AudioManager playback queue -> iPhone speaker
-- **iPhone mode**: Uses `.voiceChat` audio session for echo cancellation + mic gating during AI speech
-- **Glasses mode**: Uses `.videoChat` audio session (mic is on glasses, speaker is on phone -- no echo)
-
-### Video Pipeline
-
-- **Glasses**: DAT SDK `videoFramePublisher` (24fps) -> throttle to ~1fps -> JPEG (50% quality) -> Gemini
-- **iPhone**: `AVCaptureSession` back camera (30fps) -> throttle to ~1fps -> JPEG -> Gemini
-
-### Tool Calling
-
-Gemini Live supports function calling. This app declares a single `execute` tool that routes everything through OpenClaw:
-
-1. User says "Add eggs to my shopping list"
-2. Gemini speaks "Sure, adding that now" (verbal acknowledgment before tool call)
-3. Gemini sends `toolCall` with `execute(task: "Add eggs to the shopping list")`
-4. `ToolCallRouter` sends HTTP POST to OpenClaw gateway
-5. OpenClaw executes the task using its 56+ connected skills
-6. Result returns to Gemini via `toolResponse`
-7. Gemini speaks the confirmation
-
-## Requirements
-
-- iOS 17.0+
-- Xcode 15.0+
-- Gemini API key ([get one free](https://aistudio.google.com/apikey))
-- Meta Ray-Ban glasses (optional -- use iPhone mode for testing)
-- OpenClaw on your Mac (optional -- for agentic actions)
-
-## Troubleshooting
-
-**"Gemini API key not configured"** -- Open `GeminiConfig.swift` and add your API key.
-
-**OpenClaw connection timeout** -- Make sure your iPhone and Mac are on the same Wi-Fi network, the gateway is running (`openclaw gateway restart`), and the hostname in `GeminiConfig.swift` matches your Mac's Bonjour name.
-
-**Echo/feedback in iPhone mode** -- The app mutes the mic while the AI is speaking. If you still hear echo, try turning down the volume.
-
-**Gemini doesn't hear me** -- Check that microphone permission is granted. The app uses aggressive voice activity detection -- speak clearly and at normal volume.
-
-**OpenClaw opens duplicate browser tabs** -- This is a known upstream issue in OpenClaw's CDP (Chrome DevTools Protocol) connection management ([#13851](https://github.com/nichochar/openclaw/issues/13851), [#12317](https://github.com/nichochar/openclaw/issues/12317)). The browser control service loses track of existing tabs after navigation, falling back to opening new ones. Using `profile: "openclaw"` (managed Chrome) instead of the default extension relay may improve stability.
-
-For DAT SDK issues, see the [developer documentation](https://wearables.developer.meta.com/docs/develop/) or the [discussions forum](https://github.com/facebook/meta-wearables-dat-ios/discussions).
-
-## License
-
-This source code is licensed under the license found in the [LICENSE](LICENSE) file in the root directory of this source tree.
+Built with care on [Replit](https://replit.com).

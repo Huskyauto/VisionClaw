@@ -1,0 +1,120 @@
+I ran the connection tests for you just now. Here’s the current status:
+
+| Provider   | Connected | Detail                                      |
+|-----------|-----------|----------------------------------------------|
+| Anthropic | ❌        | 404 model: `claude-3-5-haiku-20241022`       |
+| Google    | ❌        | 404 status code (no body)                    |
+| OpenAI    | ✅        | OK - connected                               |
+| OpenRouter| ✅        | OK - connected                               |
+| Perplexity| ✅        | OK - connected                               |
+| xAI       | ✅        | OK - connected                               |
+| Replit    | ✅        | Built-in, always available                   |
+
+So your keys *exist*, but Anthropic and Google calls are failing with 404s, which usually means “bad model/endpoint/config,” not necessarily a bad key.
+
+Let’s handle them one by one.
+
+---
+
+## 1. Anthropic – 404 model: `claude-3-5-haiku-20241022`
+
+The error is specifically about the **model name**, not the key.
+
+### Likely issues
+1. Wrong / outdated model ID
+2. Model not enabled for your account / region
+3. Using Anthropic via a different provider (e.g., OpenRouter) but with Anthropic-native model IDs
+
+### Actions for you to take
+
+1. **Confirm the exact model ID supported by your account**
+   - Go to: https://console.anthropic.com
+   - Check the “API” or “Models” section.
+   - Look for the *exact* model strings there (e.g. `claude-3-5-haiku-20241022`, `claude-3-5-sonnet-20241022`, or earlier ones like `claude-3-haiku-20240307`).
+   - Copy-paste the model ID from the console (no edits).
+
+2. **Update your config to a known-good model**
+   - If you see an older but stable one like:
+     - `claude-3-haiku-20240307`
+     - `claude-3-sonnet-20240229`
+   - Switch the Anthropic model in your app to one of those and rerun the test.
+
+3. **Check that you’re using the correct endpoint & API key type**
+   - Endpoint should be Anthropic’s v1 messages endpoint (if you’re using native Anthropic).
+   - Make sure you’re not accidentally using an OpenRouter key or URL with Anthropic model names; those use different IDs.
+
+If you tell me:
+- Which dashboard you created the Anthropic key in
+- And the exact model name you *think* you’re using
+
+I can give you the precise model string you should drop into your config.
+
+---
+
+## 2. Google Gemini – 404 (no body)
+
+404 here usually means the **model or URL is wrong**, not the key itself.
+
+Common pitfalls:
+- Using old model names (`gemini-pro`, `gemini-pro-vision`) after Google migrated to `gemini-1.5-*`.
+- Hitting the wrong region/URL (e.g., `us-central1` vs global endpoint).
+- Mixing “Vertex AI” style config with “direct Gemini API” keys.
+
+### Actions for you to take
+
+1. **Decide which you’re using:**
+   - Direct Gemini API (from AI Studio: `aistudio.google.com`)
+   - or Vertex AI (from Google Cloud console)
+
+2. **For direct Gemini API (AI Studio):**
+   - Go to https://aistudio.google.com
+   - Check the “API Keys” section – confirm the key is active.
+   - For models, use current names, e.g.:
+     - `gemini-1.5-flash`
+     - `gemini-1.5-pro`
+   - Ensure your base URL is:
+     - `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+   - Then plug `gemini-1.5-flash` or `gemini-1.5-pro` into your config and rerun the test.
+
+3. **For Vertex AI:**
+   - Make sure you’re using the Vertex endpoint (not the AI Studio one).
+   - Verify the model name exactly as shown in Vertex (often similar, but sometimes slightly different).
+   - Confirm your service account / auth is set up correctly if you’re not using a simple API key.
+
+---
+
+## 3. How I can “do it for you”
+
+Given this environment, what I can concretely do for you:
+
+- I already ran `POST /api/provider-keys/test` and saw the results.
+- If you paste:
+  - Your **current Anthropic config block** (model name + endpoint type)
+  - Your **current Google/Gemini config block**
+  (you can redact the actual keys)
+  
+  I can:
+  - Point out exactly what to change (model names, endpoints, or flags).
+  - Give you copy-paste config values that should pass the connection tests.
+
+Example of what to paste (with keys removed):
+
+```json
+{
+  "anthropic": {
+    "apiKey": "sk-***redacted***",
+    "model": "claude-3-5-haiku-20241022",
+    "baseUrl": "https://api.anthropic.com/v1/messages"
+  },
+  "google": {
+    "apiKey": "AIza***redacted***",
+    "model": "gemini-pro",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1/models"
+  }
+}
+```
+
+Send me something like that (no real secrets), and I’ll return an exact patch:
+
+- “Change `X` to `Y` here”
+- Then I can re-run the connection tests and confirm both go green.
