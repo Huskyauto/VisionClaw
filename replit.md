@@ -65,6 +65,11 @@ VisionClaw is built on a React + TypeScript frontend with shadcn/ui and Tailwind
 - **Context Management:** Robust system prompt construction dynamically incorporating persona configuration, memory entries, and knowledge base content within defined token budgets.
 - **Asynchronous Operations:** Embedding generation and heartbeat tasks leverage asynchronous processing to avoid blocking the main request flow.
 
+## GitHub Backup
+- Repository: https://github.com/Huskyauto/VisionClaw
+- Push method: GitHub API (git tree/blob/commit) using personal access token
+- Token provided by user (not stored in secrets — must be re-provided if needed)
+
 ## External Dependencies
 
 - **AI Providers:**
