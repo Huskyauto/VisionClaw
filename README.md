@@ -1,17 +1,22 @@
 # VisionClaw
 
-**A Self-Actualizing Personal AI Assistant Platform**
+**A Self-Actualizing Personal AI Corporation Platform**
 
-VisionClaw is a full-stack, multi-agent AI assistant platform built with React, TypeScript, Express, and PostgreSQL. It features streaming multi-model chat, a 12-persona agent team, autonomous background tasks, semantic memory, voice conversations, payment processing, and cloud backups — all in a single deployable application.
+VisionClaw is a full-stack, multi-agent AI assistant platform built with React, TypeScript, Express, and PostgreSQL. It features streaming multi-model chat, a 12-persona agent team, autonomous background tasks, semantic memory, voice conversations, payment processing, cloud backups, a public commercial landing page, and intelligent model cost routing — all in a single deployable application.
+
+**Total codebase**: ~11,400 lines of TypeScript across 101 files, 14 page components, 50+ API endpoints.
 
 ---
 
 ## Table of Contents
 
 - [Architecture Overview](#architecture-overview)
+- [Dashboard and Navigation](#dashboard-and-navigation)
+- [Public Landing Page](#public-landing-page)
 - [Feature List](#feature-list)
   - [Multi-Conversation Streaming Chat](#multi-conversation-streaming-chat)
   - [Multi-Provider AI Routing](#multi-provider-ai-routing)
+  - [Intelligent Model Cost Router](#intelligent-model-cost-router)
   - [12-Persona Agent System](#12-persona-agent-system)
   - [Agentic Tool Calling](#agentic-tool-calling)
   - [Semantic Three-Tier Memory](#semantic-three-tier-memory)
@@ -50,7 +55,105 @@ VisionClaw is a modular monolith — frontend and backend live in one repository
 
 The application serves both the Vite-built frontend and the Express API on a single port (5000). AI responses stream in real-time via SSE, tool calls execute server-side with multi-round loops, and the heartbeat engine runs autonomous background tasks on configurable cron schedules.
 
-**Total codebase**: ~17,700 lines of TypeScript across 50+ files.
+### Routing Architecture
+
+The app has two distinct presentation modes:
+
+1. **Public pages** (`/landing`, `/signup`, `/login`) — full-width standalone layouts without sidebar, accessible without authentication
+2. **App pages** (everything else) — sidebar navigation layout with authentication gate
+
+When a user visits the site:
+- **Unauthenticated** (PIN enabled) — sees the public landing page. Can navigate to Sign In or Sign Up.
+- **Authenticated** (or no PIN set) — goes directly to the dashboard. Can still access `/landing` for the marketing page.
+
+---
+
+## Dashboard and Navigation
+
+### Home Dashboard (`/`)
+
+The home dashboard is the central hub showing:
+
+- **Stats cards** — total conversations, messages, memories, and system uptime
+- **Conversation templates** — 10 pre-built templates as clickable cards for one-click conversation starts (Weekly Business Review, Code Review, Email Drafting, Brainstorming, Content Strategy, and more)
+- **Agent activity feed** — the last 10 heartbeat execution logs showing which agents ran, what they did, and their status
+- **Quick start** — new conversation button and recent conversations
+
+### Sidebar Navigation
+
+The sidebar is the primary navigation for the authenticated application and includes:
+
+| Section | Page | Description |
+|---------|------|-------------|
+| **Home** | `/` | Dashboard with stats, templates, and activity feed |
+| **Conversations** | `/chat/:id` | Chat threads with search, create, and delete |
+| **Personas** | `/personas` | 12-persona agent management with full CRUD and 8 document fields |
+| **Memory** | `/memory` | Long-term memory entries with search, edit, and category filtering |
+| **Knowledge** | `/knowledge` | Permanent knowledge base with priority and persona scoping |
+| **Heartbeat** | `/heartbeat` | Autonomous task scheduler with logs, templates, and controls |
+| **Skills** | `/skills` | 50+ toggleable agent capabilities organized by category |
+| **Analytics** | `/analytics` | Recharts-powered usage analytics with charts and KPIs |
+| **Payments** | `/payments` | Stripe product catalog and transaction history |
+| **Settings** | `/settings` | API keys, PIN auth, agent config, export/import, cloud backup |
+| **Log Out** | — | Clears session token (visible only when PIN auth is active) |
+| **Install App** | — | PWA install button (visible when browser supports it) |
+
+The sidebar also includes:
+- **Conversation list** with grouped headers (Today, Yesterday, This Week, Older)
+- **Full-text search** with 300ms debounce and match snippets
+- **Infinite scroll** with Load More pagination
+- **New conversation button** at the top
+
+---
+
+## Public Landing Page
+
+The landing page at `/landing` (and `/` for unauthenticated visitors) is a full-width, standalone marketing page that showcases VisionClaw's capabilities and commercial offering.
+
+### Navigation Bar
+
+Sticky top nav with:
+- **VisionClaw logo** — links to top of page
+- **Section tabs** — Demo, Agents, Features, Pricing (smooth-scroll to each section)
+- **Sign In** — navigates to PIN login page
+- **Sign Up** — navigates to plan selection and registration
+- **Theme toggle** — dark/light mode switch
+
+### Sections
+
+1. **Hero** — "The AI Corporation Platform" headline, "Platform Online" live badge, Get Started and View Demo CTAs
+2. **Live Activity Demo** — animated simulation showing the AI corporation in action:
+   - Real-time agent activity feed with events cycling every 3.2 seconds
+   - Color-coded by type: blue (tasks), green (revenue), amber (delegations), purple (memory), cyan (intel)
+   - Revenue badges showing dollar amounts (+$18.4K, +$12.5K, etc.)
+   - Four live-updating stat cards: Revenue Generated, Tasks Completed, Agent Delegations, Memories Stored
+   - "Live Simulation" badge with animated green indicator
+   - Accessible: `aria-live="polite"` log region, `prefers-reduced-motion` support
+3. **Agent Team Showcase** — grid of all 12 personas with names, roles, and icons
+4. **Features Grid** — 6 key capabilities: Multi-Agent Team, Autonomous Operations, Semantic Memory, Voice Conversations, Analytics Dashboard, Payment Processing
+5. **Live Platform Stats** — real numbers from `/api/public/stats` (conversations, messages, autonomous tasks, memories, uptime) refreshed every 30 seconds
+6. **Pricing** — 3 tiers with feature comparison:
+   - **Starter** ($29/mo) — 1 persona, 100 conversations/mo, basic memory
+   - **Pro** ($99/mo, highlighted) — 5 personas, unlimited conversations, full memory + voice
+   - **Enterprise** ($299/mo) — Full 12-agent team, autonomous heartbeat, analytics, priority support
+7. **Footer CTA** — "Ready to build your AI corporation?" with Get Started Now button
+8. **Footer** — copyright and branding
+
+### Sign Up Page (`/signup`)
+
+- Plan selection with 3 clickable cards (Pro pre-selected with "Popular" badge)
+- Name and email form fields
+- "Continue to Payment" button — connects to Stripe Checkout
+- Inline error handling (stays on page with clear messages if checkout fails)
+- Cross-links to Sign In for existing users
+- Back arrow to return to landing page
+
+### Sign In Page (`/login`)
+
+- PIN entry form with "Welcome Back" heading
+- Back arrow to return to landing page
+- Cross-link to Sign Up for new users
+- Error display for invalid PIN attempts
 
 ---
 
@@ -87,6 +190,22 @@ VisionClaw routes requests across 6+ AI providers with dynamic model discovery a
 - Provider API key management UI in Settings with connection testing
 - Automatic fallback if a provider is unavailable
 
+### Intelligent Model Cost Router
+
+The heartbeat engine includes an intelligent cost routing system that automatically assigns the cheapest appropriate model to each autonomous task based on the persona's cost tier.
+
+| Tier | Personas | Default Model | Use Case |
+|------|----------|---------------|----------|
+| **Fast** ($) | Radar, Atlas, Scribe, Chief of Staff | gpt-5-nano | Background scans, metrics, content drafts, routing |
+| **Balanced** ($$) | Apollo, Forge, Proof | gpt-5-mini | Revenue analysis, engineering, content review |
+| **Powerful** ($$$) | VisionClaw, Felix, Neptune | Conversation model | Complex reasoning, strategy, deep research |
+
+- `resolveTaskModel()` in heartbeat.ts applies routing at execution time
+- User-created tasks keep their explicit model selection (no override)
+- System/persona-created tasks are routed to the optimal cost tier
+- Heartbeat logs record the effective (routed) model for accurate cost analytics
+- Atlas's cost analysis shows real savings from model routing
+
 ### 12-Persona Agent System
 
 Every AI interaction is shaped by a **persona** — a structured identity configuration with 8 document fields that compose the system prompt.
@@ -119,6 +238,7 @@ Every AI interaction is shaped by a **persona** — a structured identity config
 | **Neptune** | Deep Research | Activated on Radar escalation for deep analysis |
 | **Apollo** | Revenue & Pipeline | Sales tracking, deal progression |
 | **Atlas** | Metrics & Reporting | ROI tracking, cost analysis, dashboards |
+| **Agent Blueprint** | Multi-Agent Operator | Agent orchestration and coordination |
 
 - **Quick-switch dropdown** in chat header to change persona without leaving the conversation
 - **Chain of command enforcement** — Neptune only activates via Radar; no direct CEO access
@@ -183,6 +303,7 @@ A background task engine that enables personas to work independently on schedule
 - **60-second tick loop** — checks for due tasks every minute
 - **Maintenance cycles** — every 10 ticks, archives expired memories and prunes old logs
 - **Multi-round execution** — tasks build full context (memory, notes, knowledge, other agent status) before executing
+- **Intelligent cost routing** — automatically assigns cheapest appropriate model based on persona tier
 
 #### Supported Task Types
 
@@ -280,10 +401,13 @@ New chat screens display a contextual greeting card with relevant information.
 Full payment processing integrated via Stripe and Replit Connectors.
 
 - **Product catalog** — create products with one-time or subscription pricing
+- **3 subscription tiers** — Starter ($29/mo), Pro ($99/mo), Enterprise ($299/mo)
 - **Stripe Checkout** — generates checkout sessions for seamless payment
 - **Transaction history** — view recent payment intents and their status
 - **Webhook-driven sync** — automatic data synchronization via Stripe webhooks
 - **Payments page** at `/payments` with product cards and transaction table
+- **Public checkout** — rate-limited (5 requests/min/IP) public endpoint for signup flow
+- **Product seeding** — auth-protected endpoint to create tier products in Stripe
 
 ### Google Drive Cloud Backup
 
@@ -304,6 +428,8 @@ Optional security layer for protecting the entire application.
 - All API routes protected when PIN is configured
 - Centralized `authFetch` helper ensures every client-side request includes auth headers
 - Auth-aware file serving with query parameter token support for images
+- Log Out button in sidebar (visible only when PIN auth is active)
+- Unauthenticated users see the public landing page instead of a blank login screen
 
 ### Export and Import
 
@@ -327,7 +453,7 @@ VisionClaw is installable as a Progressive Web App on mobile devices.
 
 Full theme support with system-aware defaults.
 
-- Toggle switch in the sidebar
+- Toggle switch in the sidebar and on the landing page
 - CSS custom properties for all color tokens
 - Dark class applied to `<html>` element
 - Persisted in localStorage across sessions
@@ -383,51 +509,56 @@ Optional Discord bot that mirrors the AI chat experience to Discord channels.
 VisionClaw/
 ├── client/
 │   ├── src/
-│   │   ├── pages/              # 12 page components
-│   │   │   ├── home.tsx        # Dashboard
-│   │   │   ├── chat.tsx        # Chat interface
-│   │   │   ├── analytics.tsx   # Usage analytics
-│   │   │   ├── personas.tsx    # Persona management
-│   │   │   ├── memory.tsx      # Memory system
-│   │   │   ├── knowledge.tsx   # Knowledge base
-│   │   │   ├── skills.tsx      # Skills toggle panel
-│   │   │   ├── heartbeat.tsx   # Autonomous tasks
-│   │   │   ├── payments.tsx    # Stripe payments
-│   │   │   ├── settings.tsx    # Global settings
-│   │   │   ├── login.tsx       # PIN authentication
-│   │   │   └── not-found.tsx   # 404 page
+│   │   ├── pages/                # 14 page components
+│   │   │   ├── home.tsx          # Dashboard with stats, templates, activity feed
+│   │   │   ├── chat.tsx          # Chat interface with streaming, tools, voice
+│   │   │   ├── analytics.tsx     # Usage analytics with Recharts
+│   │   │   ├── personas.tsx      # 12-persona management with 8 doc fields
+│   │   │   ├── memory.tsx        # Semantic memory with search and edit
+│   │   │   ├── knowledge.tsx     # Knowledge base with priority and filtering
+│   │   │   ├── skills.tsx        # 50+ toggleable agent skills
+│   │   │   ├── heartbeat.tsx     # Autonomous task scheduler and logs
+│   │   │   ├── payments.tsx      # Stripe products and transactions
+│   │   │   ├── settings.tsx      # Global config, API keys, export/import
+│   │   │   ├── landing.tsx       # Public landing page with demo and pricing
+│   │   │   ├── signup.tsx        # Plan selection and registration
+│   │   │   ├── login.tsx         # PIN authentication
+│   │   │   └── not-found.tsx     # 404 page
 │   │   ├── components/
-│   │   │   ├── app-sidebar.tsx # Main navigation sidebar
-│   │   │   ├── error-state.tsx # Reusable error component
-│   │   │   └── ui/            # shadcn/ui components
+│   │   │   ├── app-sidebar.tsx   # Main navigation sidebar with logout
+│   │   │   ├── error-state.tsx   # Reusable error component
+│   │   │   ├── theme-provider.tsx # Dark/light mode provider
+│   │   │   ├── theme-toggle.tsx  # Theme switch button
+│   │   │   └── ui/              # shadcn/ui components
 │   │   ├── lib/
-│   │   │   ├── queryClient.ts  # TanStack Query + authFetch
-│   │   │   ├── auth.tsx        # Auth context provider
-│   │   │   └── utils.ts        # Utility functions
+│   │   │   ├── queryClient.ts    # TanStack Query + authFetch + apiRequest
+│   │   │   ├── auth.tsx          # Auth context provider (login, logout, token)
+│   │   │   └── utils.ts          # Utility functions
 │   │   ├── hooks/
-│   │   │   └── use-toast.ts    # Toast notifications
-│   │   ├── App.tsx             # Router and layout
-│   │   └── main.tsx            # Entry point
+│   │   │   └── use-toast.ts      # Toast notifications
+│   │   ├── App.tsx               # Router, layout, AuthGate
+│   │   └── main.tsx              # Entry point
 │   └── public/
-│       ├── sw.js               # Service worker
-│       ├── manifest.json       # PWA manifest
-│       └── icons/              # App icons
+│       ├── sw.js                 # Service worker
+│       ├── manifest.json         # PWA manifest
+│       └── icons/                # App icons
 ├── server/
-│   ├── index.ts                # Express server entry
-│   ├── routes.ts               # All API route definitions
-│   ├── storage.ts              # Database access layer (IStorage)
-│   ├── chat-engine.ts          # AI chat logic + streaming
-│   ├── tools.ts                # 15 agentic tool definitions
-│   ├── heartbeat.ts            # Autonomous task engine
-│   ├── embeddings.ts           # Vector embedding generation
-│   ├── auth.ts                 # PIN authentication
-│   ├── voice.ts                # ElevenLabs voice integration
-│   ├── seed.ts                 # Database seeding (personas, skills, templates)
-│   ├── db.ts                   # Database connection
-│   ├── cron-utils.ts           # Cron expression utilities
-│   └── vite.ts                 # Vite dev server integration
+│   ├── index.ts                  # Express server entry
+│   ├── routes.ts                 # All API route definitions (50+ endpoints)
+│   ├── storage.ts                # Database access layer (IStorage interface)
+│   ├── chat-engine.ts            # AI chat logic, streaming, system prompt building
+│   ├── providers.ts              # Multi-provider model routing and discovery
+│   ├── tools.ts                  # 15 agentic tool definitions
+│   ├── heartbeat.ts              # Autonomous task engine with cost router
+│   ├── embeddings.ts             # Vector embedding generation
+│   ├── auth.ts                   # PIN authentication with HMAC-SHA256
+│   ├── voice.ts                  # ElevenLabs voice integration
+│   ├── seed.ts                   # Database seeding (personas, skills, templates, tasks)
+│   ├── db.ts                     # Database connection
+│   ├── cron-utils.ts             # Cron expression utilities
+│   └── vite.ts                   # Vite dev server integration
 ├── shared/
-│   └── schema.ts               # Database schema + Zod types
+│   └── schema.ts                 # Database schema + Zod types (13 tables)
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
@@ -452,8 +583,8 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 | `agent_settings` | Global configuration | agentName, personality, defaultModel, accessPin |
 | `skills` | Toggleable capabilities | name, description, enabled, promptContent |
 | `provider_keys` | AI provider API keys | provider, apiKey, baseUrl, enabled |
-| `heartbeat_tasks` | Scheduled background tasks | name, cronExpression, promptContent, model, personaId |
-| `heartbeat_logs` | Task execution history | taskName, status, output, durationMs |
+| `heartbeat_tasks` | Scheduled background tasks | name, cronExpression, promptContent, model, personaId, createdBy |
+| `heartbeat_logs` | Task execution history | taskName, status, output, model, durationMs |
 | `conversation_templates` | Pre-built chat templates | name, systemPromptPrefix, starterMessages |
 | `users` | Authentication accounts | username, password |
 
@@ -461,22 +592,29 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 
 ## API Reference
 
+### Public Endpoints (No Auth Required)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/public/stats` | Live platform stats (conversations, messages, tasks, memories, uptime) |
+| GET | `/api/public/stripe/products` | Stripe product catalog with prices |
+| POST | `/api/public/stripe/checkout` | Create Stripe checkout session (rate-limited: 5/min/IP) |
+
 ### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/auth/login` | Authenticate with PIN |
-| GET | `/api/auth/status` | Check session status |
+| GET | `/api/auth/status` | Check session status and auth requirement |
 
 ### Conversations
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/conversations` | List conversations (paginated) |
+| GET | `/api/conversations` | List conversations (paginated: limit, offset) |
 | POST | `/api/conversations` | Create new conversation |
 | GET | `/api/conversations/:id` | Get conversation with messages |
-| PATCH | `/api/conversations/:id` | Update conversation |
-| DELETE | `/api/conversations/:id` | Delete conversation |
+| PATCH | `/api/conversations/:id` | Update conversation (title, model, persona, thinking) |
+| DELETE | `/api/conversations/:id` | Delete conversation and its messages |
 | POST | `/api/conversations/:id/messages` | Send message (SSE stream response) |
-| GET | `/api/search` | Search conversations and messages |
+| GET | `/api/search` | Search conversations and messages (q parameter) |
 
 ### Personas
 | Method | Endpoint | Description |
@@ -496,8 +634,8 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 | POST | `/api/memory` | Create memory entry |
 | PATCH | `/api/memory/:id` | Update memory entry |
 | DELETE | `/api/memory/:id` | Delete memory entry |
-| GET | `/api/memory/stats` | Memory statistics |
-| POST | `/api/memory/backfill-embeddings` | Generate missing embeddings |
+| GET | `/api/memory/stats` | Memory statistics (total, by category, by status) |
+| POST | `/api/memory/backfill-embeddings` | Generate missing vector embeddings |
 
 ### Knowledge
 | Method | Endpoint | Description |
@@ -522,7 +660,7 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 | PATCH | `/api/heartbeat/tasks/:id` | Update task |
 | DELETE | `/api/heartbeat/tasks/:id` | Delete task |
 | GET | `/api/heartbeat/logs` | Task execution logs |
-| GET | `/api/heartbeat/status` | Engine status |
+| GET | `/api/heartbeat/status` | Engine status (running, task count, next runs) |
 | POST | `/api/heartbeat/start` | Start engine |
 | POST | `/api/heartbeat/stop` | Stop engine |
 | POST | `/api/heartbeat/delegate` | Delegate task from chat |
@@ -532,7 +670,7 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 |--------|----------|-------------|
 | GET | `/api/settings` | Get global settings |
 | PUT | `/api/settings` | Update settings |
-| GET | `/api/models` | List available AI models |
+| GET | `/api/models` | List available AI models across all providers |
 | GET | `/api/provider-keys` | List provider keys (masked) |
 | PUT | `/api/provider-keys/:provider` | Set provider API key |
 | DELETE | `/api/provider-keys/:provider` | Remove provider key |
@@ -541,18 +679,19 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 ### Files and Voice
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/upload` | Upload file |
-| GET | `/uploads/:filename` | Serve uploaded file |
+| POST | `/api/upload` | Upload file (max 10MB) |
+| GET | `/uploads/:filename` | Serve uploaded file (auth-aware) |
 | POST | `/api/voice/conversations/:id/messages` | Voice message (STT + AI + TTS) |
-| GET | `/api/voice/voices` | List available voices |
+| GET | `/api/voice/voices` | List available ElevenLabs voices |
 
 ### Stripe Payments
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/stripe/publishable-key` | Get Stripe public key |
 | GET | `/api/stripe/products` | List products and prices |
-| POST | `/api/stripe/checkout` | Create checkout session |
+| POST | `/api/stripe/checkout` | Create checkout session (authenticated) |
 | POST | `/api/stripe/create-product` | Create product |
+| POST | `/api/stripe/seed-products` | Seed Starter/Pro/Enterprise products (auth-protected) |
 | GET | `/api/stripe/payments` | Transaction history |
 
 ### Templates and Skills
@@ -569,7 +708,7 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 ### System
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/stats` | System statistics |
+| GET | `/api/stats` | System statistics (authenticated) |
 | GET | `/api/analytics` | Usage analytics data |
 | GET | `/api/context/summary` | Context summary for new chats |
 | GET | `/api/discord/status` | Discord bot status |
@@ -607,7 +746,7 @@ VisionClaw uses 13 PostgreSQL tables managed by Drizzle ORM.
 ### First-Time Setup
 
 1. Navigate to **Settings** and configure your AI provider API keys
-2. (Optional) Set a PIN for authentication
+2. (Optional) Set a PIN for authentication — this enables the public landing page and Sign In/Sign Up flow
 3. (Optional) Configure ElevenLabs for voice, Stripe for payments, or Google Drive for backups
 4. Start chatting — the default VisionClaw persona is ready to go
 
